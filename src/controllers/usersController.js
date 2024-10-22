@@ -2,6 +2,9 @@ const { query } = require("../config/db");
 const bcrypt = require("bcrypt");
 const { hidSensitiveData } = require("../helpers/helper");
 const saltRounds = 10;
+require("dotenv").config();
+
+const jwt = require("jsonwebtoken");
 
 const userCreate = async (req, res) => {
   const { email, password } = req.body;
@@ -30,12 +33,19 @@ const userLogin = async (req, res) => {
       sql: "SELECT * FROM users WHERE email = ?",
       values: req.body.email,
     });
-
-    console.log("results", results);
+    const token = jwt.sign(
+      {
+        userId: results[0].id,
+        email: results[0].email,
+      },
+      process.env.NODE_JWT_SECRET
+      // { expiresIn: '1h' } // Example: token expires in 1 hour
+    );
 
     return res.status(200).json({
       message: "User logged in successfully",
       data: hidSensitiveData(results[0]),
+      token: token,
     });
   } catch (error) {
     return res.status(500).json({

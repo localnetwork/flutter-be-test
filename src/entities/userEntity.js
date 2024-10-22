@@ -1,4 +1,5 @@
 const { query } = require("../config/db");
+const { hidSensitiveData } = require("../helpers/helper");
 const findUserByEmail = async (email) => {
   const results = await query({
     sql: "SELECT * FROM users WHERE email = ?",
@@ -12,4 +13,13 @@ const findUserByEmail = async (email) => {
   return true;
 };
 
-module.exports = { findUserByEmail };
+const findUserById = async (id) => {
+  const results = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: id,
+  });
+
+  return hidSensitiveData(results[0]);
+};
+
+module.exports = { findUserByEmail, findUserById };
