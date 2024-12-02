@@ -1,45 +1,41 @@
-const { emailValidator } = require("../helpers/helper");
+const { emailValidator } = require("../lib/helper");
 const { findUserByEmail } = require("../entities/userEntity");
 const { query } = require("../config/db");
 const bcrypt = require("bcrypt");
+
+// Helper function for adding errors
+const addError = (errors, field, message) => {
+  errors.push({ [field]: message });
+};
+
+// User registration validation
 const userCreateValidation = async (req, res, next) => {
   const errors = [];
-
-  const foundUser = await findUserByEmail(req.body.email);
-
   const { email, password } = req.body;
 
-  if (foundUser) {
-    errors.push({
-      email: "Account already exists.",
-    });
-    errors.push({
-      password: "Account already exists.",
-    });
-  }
-
+  // Check if email is provided and valid
   if (!email) {
-    errors.push({
-      email: "Email is required",
-    });
+    addError(errors, "email", "Email is required");
+  } else if (!emailValidator(email)) {
+    addError(errors, "email", "Email is invalid");
   }
 
-  if (emailValidator(email) === false && email) {
-    errors.push({
-      email: "Email is invalid",
-    });
-  }
-
+  // Check if password is provided
   if (!password) {
-    errors.push({
-      password: "Password is required",
-    });
+    addError(errors, "password", "Password is required");
   }
 
+  // Check if user already exists
+  if (email && (await findUserByEmail(email))) {
+    addError(errors, "email", "Account already exists");
+    addError(errors, "password", "Account already exists");
+  }
+
+  // If errors exist, return early
   if (errors.length > 0) {
     return res.status(422).json({
-      message: "Please check the errors in the fields.",
-      errors: errors,
+      message: "Validation failed. Please check the errors.",
+      errors,
     });
   }
 
@@ -47,63 +43,44 @@ const userCreateValidation = async (req, res, next) => {
 };
 
 // User login validation
-
 const userLoginValidation = async (req, res, next) => {
+  const errors = [];
   const { email, password } = req.body;
-
   const invalidCredentialsMsg = "These credentials do not match our records.";
 
-  const errors = [];
-
+  // Validate email
   if (!email) {
-    errors.push({
-      email: "Email is required",
-    });
+    addError(errors, "email", "Email is required");
+  } else if (!emailValidator(email)) {
+    addError(errors, "email", "Email is invalid");
   }
 
-  if (emailValidator(email) === false && email) {
-    errors.push({
-      email: "Email is invalid",
-    });
-  }
-
+  // Validate password
   if (!password) {
-    errors.push({
-      password: "Password is required",
-    });
+    addError(errors, "password", "Password is required");
   }
 
-  const foundUser = await findUserByEmail(email);
+  // Check user existence and credentials if email and password are provided
+  if (email && password) {
+    const foundUser = await findUserByEmail(email);
 
-  if (!foundUser) {
-    errors.push({
-      email: invalidCredentialsMsg,
-    });
-    errors.push({
-      password: invalidCredentialsMsg,
-    });
+    if (!foundUser) {
+      addError(errors, "email", invalidCredentialsMsg);
+      addError(errors, "password", invalidCredentialsMsg);
+    } else {
+      const passwordMatch = await bcrypt.compare(password, foundUser.password);
+      if (!passwordMatch) {
+        addError(errors, "email", invalidCredentialsMsg);
+        addError(errors, "password", invalidCredentialsMsg);
+      }
+    }
   }
 
-  const results = await query({
-    sql: "SELECT * FROM users WHERE email = ?",
-    values: email,
-  });
-
-  const passwordMatch = await bcrypt.compare(password, results[0].password);
-
-  if (!passwordMatch) {
-    errors.push({
-      email: invalidCredentialsMsg,
-    });
-    errors.push({
-      password: invalidCredentialsMsg,
-    });
-  }
-
+  // If errors exist, return early
   if (errors.length > 0) {
     return res.status(422).json({
-      message: "Please check the errors in the fields.",
-      errors: errors,
+      message: "Validation failed. Please check the errors.",
+      errors,
     });
   }
 

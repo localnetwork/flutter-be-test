@@ -1,6 +1,6 @@
 const { query } = require("../config/db");
 const bcrypt = require("bcrypt");
-const { hidSensitiveData } = require("../helpers/helper");
+const { hidSensitiveData } = require("../lib/helper");
 const saltRounds = 10;
 require("dotenv").config();
 

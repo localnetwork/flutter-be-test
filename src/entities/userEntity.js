@@ -1,5 +1,5 @@
 const { query } = require("../config/db");
-const { hidSensitiveData } = require("../helpers/helper");
+const { hidSensitiveData } = require("../lib/helper");
 const findUserByEmail = async (email) => {
   const results = await query({
     sql: "SELECT * FROM users WHERE email = ?",

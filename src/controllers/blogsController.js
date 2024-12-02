@@ -1,11 +1,13 @@
 const { query } = require("../config/db");
-const { getUserByToken } = require("../helpers/helper");
+const { getUserByToke, catchError } = require("../lib/helper");
 
 const createBlog = async (req, res) => {
   const { title, body } = req.body;
   const token = req.headers.authorization.split(" ")[1];
 
   const user = await getUserByToken(token);
+
+  console.log("user", user);
 
   try {
     const results = query({

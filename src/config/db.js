@@ -14,6 +14,16 @@ const connection = require("serverless-mysql")({
   cap: 200,
 });
 
+connection.connect((error) => {
+  console.log("hello");
+  if (error) {
+    console.log("Failed to connect to the database. Exiting...");
+    process.exit(1);
+  } else {
+    console.log("Connected to the database.");
+  }
+});
+
 async function query(sql, params) {
   try {
     await connection.connect();
@@ -29,6 +39,18 @@ async function query(sql, params) {
     }
   }
 }
+
+const sampleQuery = async () => {
+  try {
+    const results = await query("SELECT * FROM users");
+    console.log("results", results);
+    return results;
+  } catch (error) {
+    console.log("error", error);
+  }
+};
+
+sampleQuery();
 
 module.exports = {
   connection,
