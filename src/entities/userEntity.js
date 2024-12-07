@@ -10,15 +10,15 @@ const findUserByEmail = async (email) => {
     return false;
   }
 
-  return true;
+  return results[0];
 };
 
 const findUserById = async (id) => {
+  const userId = parseInt(id);
   const results = await query({
-    sql: "SELECT * FROM users WHERE id = ?",
-    values: id,
+    sql: "SELECT * FROM users",
+    values: [userId],
   });
-
   return hidSensitiveData(results[0]);
 };
 

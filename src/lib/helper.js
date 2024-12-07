@@ -4,6 +4,10 @@ const emailValidator = (email) => {
   return regex.test(email);
 };
 
+const currentTimestamp = () => {
+  return new Date().getTime(); // Returns the current timestamp in milliseconds
+};
+
 const hidSensitiveData = (data) => {
   const newData = { ...data };
   delete newData.password;
@@ -23,10 +27,19 @@ const catchError = async (promise) => {
     return [error];
   }
 };
+const addError = (errors, field, message) => {
+  errors.push({ [field]: message });
+};
+const validateRequiredField = (field, fieldName, message, errors) => {
+  if (!field) addError(errors, fieldName, message);
+};
 
 module.exports = {
   emailValidator,
   hidSensitiveData,
   getUserByToken,
   catchError,
+  addError,
+  validateRequiredField,
+  currentTimestamp,
 };

@@ -40,17 +40,17 @@ async function query(sql, params) {
   }
 }
 
-const sampleQuery = async () => {
-  try {
-    const results = await query("SELECT * FROM users");
-    console.log("results", results);
-    return results;
-  } catch (error) {
-    console.log("error", error);
-  }
-};
+// const sampleQuery = async () => {
+//   try {
+//     const results = await query("SELECT * FROM users");
+//     console.log("results", results);
+//     return results;
+//   } catch (error) {
+//     console.log("error", error);
+//   }
+// };
 
-sampleQuery();
+// sampleQuery();
 
 module.exports = {
   connection,
