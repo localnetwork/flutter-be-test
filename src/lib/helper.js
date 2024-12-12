@@ -34,6 +34,23 @@ const validateRequiredField = (field, fieldName, message, errors) => {
   if (!field) addError(errors, fieldName, message);
 };
 
+const generateCode = () => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  let hasLetter = false;
+  let hasNumber = false;
+
+  while (code.length < 4 || !hasLetter || !hasNumber) {
+    const char = chars.charAt(Math.floor(Math.random() * chars.length));
+    code += char;
+    if (/[A-Z]/.test(char)) hasLetter = true;
+    if (/[0-9]/.test(char)) hasNumber = true;
+  }
+
+  const timestamp = Date.now().toString().slice(-4); // Last 4 digits of the current timestamp
+  return `${code}${timestamp}`; // Combine the code with the timestamp
+};
+
 module.exports = {
   emailValidator,
   hidSensitiveData,
@@ -42,4 +59,5 @@ module.exports = {
   addError,
   validateRequiredField,
   currentTimestamp,
+  generateCode,
 };

@@ -1,7 +1,24 @@
 const express = require("express");
-const { isLoggedIn, isAdmin } = require("../middlewares/auth");
+const {
+  isLoggedIn,
+  isAdmin,
+  isApproved,
+  isVerified,
+} = require("../middlewares/auth");
+const {
+  addEvent,
+  getMemberEvents,
+  joinEvent,
+  getEventParticipants,
+  eventAttendanceApproval,
+  getUserAttendedEvents,
+  getEventStat,
+} = require("../controllers/eventsController");
+const {
+  eventCreateValidator,
+  eventAttendanceApprovalValidator,
+} = require("../validators/eventValidators");
 
-const { eventCreateValidator } = require("../validators/eventValidators");
 const router = express.Router();
 
 const multer = require("multer");
@@ -19,16 +36,35 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.get("/member-events", isLoggedIn);
+router.get("/member-events", isLoggedIn, getMemberEvents);
+
+router.post(
+  "/member-events/:id/join",
+  isLoggedIn,
+  isVerified,
+  isApproved,
+  joinEvent
+);
 
 router.post(
   "/events",
   isAdmin,
   upload.single("image"),
   eventCreateValidator,
-  (req, res) => {
-    res.json({ message: "Event added." });
-  }
+  addEvent
 );
+
+router.get("/member-events/:id/participants", isAdmin, getEventParticipants);
+
+// router.get("/member-events/attended", isLoggedIn, getUserAttendedEvents);
+
+router.post(
+  "/member-events/:id/approval/:userId",
+  isAdmin,
+  eventAttendanceApprovalValidator,
+  eventAttendanceApproval
+);
+
+router.get("/member-events/:id/statistics", isAdmin, getEventStat);
 
 module.exports = router;

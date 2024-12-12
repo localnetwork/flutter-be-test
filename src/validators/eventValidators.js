@@ -1,6 +1,6 @@
 const multer = require("multer");
 const upload = multer();
-
+const { query } = require("../config/db");
 const {
   emailValidator,
   addError,
@@ -18,8 +18,6 @@ const eventCreateValidator = (req, res, next) => {
   } = req.body;
 
   let eventImage = req.file;
-
-  console.log("eventImage", eventImage);
 
   // Validate required fields
   validateRequiredField(name, "name", "Event Name is required.", errors);
@@ -54,6 +52,35 @@ const eventCreateValidator = (req, res, next) => {
   next();
 };
 
+const eventAttendanceApprovalValidator = async (req, res, next) => {
+  const { id, userId } = req.params;
+  try {
+    const results = await query({
+      sql: `
+        SELECT * 
+        FROM events_participation 
+        WHERE event_joined = ? 
+          AND user_id = ? 
+      `,
+      values: [id, userId],
+    });
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        message: "The user didn't participated on this event.",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error validating event attendance approval:", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   eventCreateValidator,
+  eventAttendanceApprovalValidator,
 };

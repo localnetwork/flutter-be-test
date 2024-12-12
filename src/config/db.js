@@ -15,7 +15,6 @@ const connection = require("serverless-mysql")({
 });
 
 connection.connect((error) => {
-  console.log("hello");
   if (error) {
     console.log("Failed to connect to the database. Exiting...");
     process.exit(1);

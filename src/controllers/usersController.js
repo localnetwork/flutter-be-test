@@ -98,14 +98,22 @@ const userProfile = async (req, res, next) => {
   const decoded = jwt.decode(token);
 
   try {
-    const results = await query({
+    const userResults = await query({
       sql: "SELECT * FROM users WHERE id = ?",
       values: decoded.userId,
     });
 
+    const eventsResults = await query({
+      sql: "SELECT * FROM events_participation WHERE user_id = ? AND status = 'attended'",
+      values: decoded.userId,
+    });
+
+    const user = hidSensitiveData(userResults[0]);
+    user.attendedEventsCount = eventsResults.length;
+
     return res.status(200).json({
       message: "User profile",
-      data: hidSensitiveData(results[0]),
+      data: user,
     });
   } catch (error) {
     return res.status(500).json({
@@ -114,4 +122,96 @@ const userProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { userCreate, userLogin, userProfile };
+const joinEvent = async (req, res, next) => {
+  const id = parseInt(req.params.id);
+
+  const token = req?.headers?.authorization?.split(" ")?.[1];
+  const decoded = jwt.verify(token, process.env.NODE_JWT_SECRET);
+
+  const created_at = currentTimestamp();
+  try {
+    // Check if the event is upcoming
+    const event = await query({
+      sql: "SELECT * FROM events WHERE id = ? AND event_start_datetime > NOW()",
+      values: [id],
+    });
+
+    if (event.length === 0) {
+      return res.status(400).json({
+        message: "Cannot join past or ongoing events.",
+      });
+    }
+
+    // Check if the user has already joined the event
+    const existingRecord = await query({
+      sql: "SELECT * FROM events_participation WHERE event_joined = ? AND user_id = ?",
+      values: [id, decoded?.userId],
+    });
+
+    if (existingRecord.length > 0) {
+      return res.status(400).json({
+        message: "You already joined this event.",
+      });
+    }
+
+    // Insert new participation record
+    const results = await query({
+      sql: "INSERT INTO events_participation (event_joined, user_id, created_at, status) VALUES (?, ?, ?, ?)",
+      values: [id, decoded?.userId, created_at, "partial"],
+    });
+
+    return res.status(200).json({
+      message: "Successfully joined the event",
+    });
+  } catch (error) {
+    console.error("Error joining event:", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+const redeemCodeValidator = async (req, res, next) => {
+  const token = req?.headers?.authorization?.split(" ")?.[1];
+  const decoded = jwt.verify(token, process.env.NODE_JWT_SECRET);
+
+  const msgInvalid = "Invalid code.";
+  const { code } = req.body;
+  let errors = [];
+
+  validateRequiredField(code, "code", "Code is required.", errors);
+
+  try {
+    const results = await query({
+      sql: "SELECT * FROM generated_codes WHERE code = ?",
+      values: code,
+    });
+
+    if (results.length === 0) {
+      errors.push({ code: msgInvalid });
+    } else {
+      if (results[0].status === "redeemed") {
+        errors.push({ code: "Code already redeemed." });
+      }
+      if (decoded?.userId !== results[0].code_owner) {
+        errors.push({ code: "Only owner can redeem this code." });
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(422).json({
+        message: "Validation failed. Please check the errors.",
+        errors,
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error validating code:", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+module.exports = { userCreate, userLogin, userProfile, joinEvent };
