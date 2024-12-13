@@ -108,8 +108,14 @@ const userProfile = async (req, res, next) => {
       values: decoded.userId,
     });
 
+    const unreadNotifications = await query({
+      sql: "SELECT * FROM notifications WHERE sent_to = ? AND has_read = 0",
+      values: decoded.userId,
+    });
+
     const user = hidSensitiveData(userResults[0]);
     user.attendedEventsCount = eventsResults.length;
+    user.unreadNotificationsCount = unreadNotifications.length;
 
     return res.status(200).json({
       message: "User profile",

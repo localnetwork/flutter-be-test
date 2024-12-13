@@ -7,7 +7,7 @@ const createBlog = async (req, res) => {
 
   const user = await getUserByToken(token);
 
-  console.log("user", user);
+  // console.log("user", user);
 
   try {
     const results = query({

@@ -6,7 +6,7 @@ const redeemCode = async (req, res, next) => {
   const userId = decoded?.userId;
   const { code } = req.body;
   try {
-    const codeResult = await query({
+    const [codeResult] = await query({
       sql: "SELECT generated_codes.*, events.* FROM generated_codes JOIN events ON generated_codes.event_id = events.id WHERE generated_codes.code = ?",
       values: [code],
     });
@@ -16,11 +16,15 @@ const redeemCode = async (req, res, next) => {
       values: [code],
     });
 
-    console.log("codeResult", codeResult[0]?.allocated_stamps);
+    const [user] = await query({
+      sql: "SELECT * FROM users WHERE id = ?",
+      values: [userId],
+    });
+    const currentUserStamps = user?.stamps;
 
     const updateStamp = await query({
       sql: "UPDATE users SET stamps = ? WHERE id = ?",
-      values: [codeResult[0]?.allocated_stamps || 0, userId],
+      values: [currentUserStamps + codeResult?.allocated_stamps, userId],
     });
 
     return res.status(200).json({

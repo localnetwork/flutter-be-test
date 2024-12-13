@@ -40,6 +40,12 @@ const rewardClaimValidator = async (req, res, next) => {
       message: "You have a pending claim for this reward.",
     });
   }
+
+  if (findClaim?.status === "ready") {
+    return res.status(422).json({
+      message: "This reward is ready for pickup.",
+    });
+  }
   if (findClaim?.status === "approved") {
     return res.status(422).json({
       message: "You have already claimed this reward.",

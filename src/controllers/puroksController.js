@@ -21,6 +21,13 @@ const getPurokPopulation = async (req, res, next) => {
   try {
     let population;
     if (purokId === "all") {
+      const [total] = await query({
+        sql: `SELECT
+        SUM(male_population) AS male_population,
+        SUM(female_population) AS female_population,
+        SUM(male_population + female_population) AS total_population
+      FROM purok`,
+      });
       [population] = await query({
         sql: `
           SELECT 
@@ -37,6 +44,9 @@ const getPurokPopulation = async (req, res, next) => {
             users u ON p.id = u.purok
         `,
       });
+      population.total_population = total.total_population;
+      population.male_population = total.male_population;
+      population.female_population = total.female_population;
     } else {
       [population] = await query({
         sql: `

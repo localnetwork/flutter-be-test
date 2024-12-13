@@ -1,9 +1,19 @@
 const { query } = require("../config/db");
 const getSettings = async (req, res) => {
   try {
+    const [getPopulation] = await query({
+      sql: `
+        SELECT 
+          SUM(male_population) AS total_male_population, 
+          SUM(female_population) AS total_female_population,
+          SUM(male_population + female_population) AS total_population
+        FROM purok
+      `,
+    });
     const [results] = await query({
       sql: "SELECT * FROM settings",
     });
+    results.population = getPopulation;
 
     return res.status(200).json(results);
   } catch (error) {

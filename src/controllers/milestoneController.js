@@ -40,7 +40,7 @@ const updateMilestones = async (req, res) => {
             });
           }
         } else {
-          console.log("elseee");
+          // console.log("elseee");
           if (await findThresholdinDb(i + 1)) {
             await query({
               sql: "UPDATE milestone_thresholds SET item = '' WHERE threshold_level = ?",

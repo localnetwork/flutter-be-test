@@ -39,8 +39,16 @@ const redeemCodeValidator = async (req, res, next) => {
       values: [code],
     });
 
-    const getYearFromCreated = new Date(result.created_at).getFullYear();
-    const currentYear = new Date().getFullYear();
+    if (results) {
+      const getYearFromCreated = new Date(
+        Number(results.created_at)
+      ).getFullYear();
+      const currentYear = new Date().getFullYear();
+
+      if (getYearFromCreated !== currentYear) {
+        errors.push({ code: "Code has expired." });
+      }
+    }
 
     if (!result) {
       errors.push({ code: "Invalid code." });

@@ -16,8 +16,54 @@ const claimReward = async (req, res, next) => {
         "pending",
       ],
     });
+
+    const adminUsers = await query({
+      sql: "SELECT * FROM users WHERE role = 1",
+    });
+
+    const [rewardInfo] = await query({
+      sql: `
+        SELECT 
+          mt.*, 
+          mr.name AS reward_name, 
+          u.first_name, 
+          u.last_name 
+        FROM 
+          milestone_thresholds mt
+        JOIN 
+          milestone_rewards mr ON mt.item = mr.id
+        JOIN 
+          users u ON u.id = ?
+        WHERE 
+          mt.threshold_level = ?
+      `,
+      values: [decoded?.userId, threshold],
+    });
+
+    const [reward] = await query({
+      sql: "SELECT * FROM milestone_rewards WHERE id = ?",
+      values: [productId],
+    });
+
+    adminUsers.forEach((admin) => {
+      query({
+        sql: "INSERT INTO notifications (type, status, has_read, sent_by, sent_to, body, created_at, additional_info) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        values: [
+          "reward-claim",
+          "pending",
+          0,
+          decoded?.userId,
+          admin?.id,
+          `<strong>${rewardInfo.last_name},  ${rewardInfo.first_name}</strong> has redeemed ${rewardInfo.reward_name}.`,
+          helper?.currentTimestamp(),
+          JSON.stringify({ reward: reward, threshold_level: threshold }),
+        ],
+      });
+    });
+
     return res.status(200).json({
-      message: "Reward claimed successfully.",
+      message:
+        "Reward claimed successfully. We have notified the admins about your reward.",
     });
   } catch (error) {
     return res.status(500).json({
