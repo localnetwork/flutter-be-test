@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const { isLoggedIn, isMember } = require("../middlewares/auth");
+const {
+  isLoggedIn,
+  isMember,
+  isVerified,
+  isApproved,
+} = require("../middlewares/auth");
 
 const { redeemCodeValidator } = require("../validators/codeValidator");
 
@@ -11,6 +16,8 @@ router.post(
   "/code/redeem",
   isLoggedIn,
   isMember,
+  isVerified,
+  isApproved,
   redeemCodeValidator,
   redeemCode
 );
