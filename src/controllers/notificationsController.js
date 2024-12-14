@@ -12,12 +12,20 @@ const getNotifications = async (req, res, next) => {
   const token = req?.headers?.authorization?.split(" ")?.[1];
   const decoded = jwt.verify(token, process.env.NODE_JWT_SECRET);
   const userId = decoded?.userId;
-
   try {
-    const results = await query({
-      sql: "SELECT * FROM notifications WHERE sent_to = ? ORDER BY created_at DESC",
-      values: [userId],
-    });
+    let results = [];
+
+    if (decoded?.role === 1) {
+      results = await query({
+        sql: "SELECT * FROM notifications WHERE sent_to = ? ORDER BY created_at DESC",
+        values: [userId],
+      });
+    } else {
+      results = await query({
+        sql: "SELECT * FROM notifications WHERE sent_to = ? ORDER BY updated_at DESC",
+        values: [userId],
+      });
+    }
 
     return res.status(200).json({
       data: results,
@@ -88,11 +96,12 @@ const updateNotification = async (req, res, next) => {
       });
 
       await query({
-        sql: "INSERT INTO notifications SET status = ?, body = ?, type = ?, created_at = ?, has_read = 0, sent_to = ?, sent_by = ?, additional_info = ?",
+        sql: "INSERT INTO notifications SET status = ?, body = ?, type = ?, created_at = ?, updated_at = ?, has_read = 0, sent_to = ?, sent_by = ?, additional_info = ?",
         values: [
           "approved",
           "You've received your reward. Enjoy!",
           "reward-completed",
+          helper.currentTimestamp(),
           helper.currentTimestamp(),
           item?.sent_by,
           item?.sent_to,

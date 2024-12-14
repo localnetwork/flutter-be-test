@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const { findUserById } = require("../entities/userEntity");
+const { query } = require("../config/db");
 
 const isLoggedIn = (req, res, next) => {
   const messageTxt = "Unauthorized.";
@@ -53,9 +54,12 @@ const isVerified = async (req, res, next) => {
 
   const userId = decoded.userId;
 
-  const foundUser = await findUserById(userId);
+  const [user] = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: [userId],
+  });
 
-  if (foundUser.verified === 0 && foundUser.role !== 1) {
+  if (user.verified === 0 && user.role !== 1) {
     return res.status(422).json({
       message: "Unable to proceed. Account not verified.",
     });
@@ -73,7 +77,12 @@ const isApproved = async (req, res, next) => {
 
   const foundUser = await findUserById(parseInt(userId));
 
-  if (foundUser.status === 0 && foundUser.role !== 1) {
+  const [user] = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: [userId],
+  });
+
+  if (user.status == 0 && user.role !== 1) {
     return res.status(422).json({
       message: "Unable to proceed. Account not approved.",
     });
@@ -89,9 +98,12 @@ const isMember = async (req, res, next) => {
 
   const userId = decoded.userId;
 
-  const foundUser = await findUserById(userId);
+  const [user] = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: [userId],
+  });
 
-  if (foundUser.role !== 2) {
+  if (user.role !== 2) {
     return res.status(422).json({
       message: "Only member can perform this action.",
     });
