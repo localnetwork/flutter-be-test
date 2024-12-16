@@ -33,6 +33,13 @@ const routesPath = path.join(__dirname, "./routes");
 
 app.use(bodyParser.json());
 
+// Test the server
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "API is running",
+  });
+});
+
 // Dynamically load routes
 fs.readdirSync(routesPath).forEach((file) => {
   const route = require(path.join(routesPath, file));
@@ -47,13 +54,6 @@ app.use((req, res, next) => {
 // Handle server error
 app.use((req, res, next) => {
   res.status(500).json({ error: "Server Error" });
-});
-
-// Test the server
-app.get("/", (req, res) => {
-  res.status(200).json({
-    message: "API is running",
-  });
 });
 
 app.listen(1000, () => {
