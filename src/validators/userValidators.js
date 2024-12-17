@@ -122,4 +122,56 @@ const userLoginValidation = async (req, res, next) => {
   next();
 };
 
-module.exports = { userCreateValidation, userLoginValidation };
+const updateUserValidator = async (req, res, next) => {
+  const { first_name, middle_name, last_name, birthday, purok, email } =
+    req.body;
+  let errors = [];
+
+  validateRequiredField(
+    first_name,
+    "first_name",
+    "First Name is required.",
+    errors
+  );
+  validateRequiredField(
+    middle_name,
+    "middle_name",
+    "Middle Name is required.",
+    errors
+  );
+
+  validateRequiredField(
+    last_name,
+    "last_name",
+    "last Name is required.",
+    errors
+  );
+
+  validateRequiredField(birthday, "birthday", "Birthday is required.", errors);
+  validateRequiredField(purok, "purok", "Purok is required.", errors);
+
+  const userResults = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: parseInt(req.params.id),
+  });
+
+  if (userResults.length === 0) {
+    return res.status(404).json({
+      message: "User not found",
+    });
+  }
+
+  if (errors.length > 0) {
+    return res.status(422).json({
+      message: "Validation failed. Please check the errors.",
+      errors,
+    });
+  }
+  next();
+};
+
+module.exports = {
+  userCreateValidation,
+  userLoginValidation,
+  updateUserValidator,
+};

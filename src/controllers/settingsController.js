@@ -13,6 +13,10 @@ const getSettings = async (req, res) => {
     const [results] = await query({
       sql: "SELECT * FROM settings",
     });
+    const [getRegisteredUsers] = await query({
+      sql: "SELECT COUNT(*) AS count FROM users",
+    });
+    results.total_registered_users = getRegisteredUsers.count;
     results.population = getPopulation;
 
     return res.status(200).json(results);

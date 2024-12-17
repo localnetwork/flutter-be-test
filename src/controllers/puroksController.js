@@ -116,8 +116,6 @@ const updatePurok = async (req, res, next) => {
       ],
     });
 
-    console.log("female_population", female_population);
-
     return res.status(200).json({
       message: "Purok updated successfully.",
     });

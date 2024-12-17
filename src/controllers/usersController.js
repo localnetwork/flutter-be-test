@@ -1,9 +1,14 @@
 const { query } = require("../config/db");
 const bcrypt = require("bcrypt");
-const { hidSensitiveData, currentTimestamp } = require("../lib/helper");
+const {
+  hidSensitiveData,
+  hidSensitivePropertiesFromArray,
+  currentTimestamp,
+} = require("../lib/helper");
 const saltRounds = 10;
 require("dotenv").config();
 
+const { sendVerification } = require("../mail/userMail");
 const jwt = require("jsonwebtoken");
 
 const userCreate = async (req, res) => {
@@ -17,6 +22,7 @@ const userCreate = async (req, res) => {
     middle_name,
     last_name,
   } = req.body;
+
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   const getTimestamp = currentTimestamp();
@@ -36,21 +42,36 @@ const userCreate = async (req, res) => {
         getTimestamp,
       ],
     });
-
     const getLatestUser = await query({
       sql: "SELECT * FROM users WHERE id = ?",
       values: results.insertId,
     });
-
     const token = jwt.sign(
       {
         userId: getLatestUser[0].id,
         email: getLatestUser[0].email,
         role: getLatestUser[0].role,
+        first_name: getLatestUser[0].first_name,
       },
       process.env.NODE_JWT_SECRET
       // { expiresIn: '1h' } // Example: token expires in 1 hour
     );
+
+    const mailData = {
+      email,
+      password,
+      gender,
+      purok,
+      birthday,
+      first_name,
+      middle_name,
+      last_name,
+      token,
+      type: "verification",
+      getLatestUser: getLatestUser[0],
+    };
+
+    await sendVerification(mailData);
 
     return res.status(200).json({
       message: "User created successfully",
@@ -220,4 +241,134 @@ const redeemCodeValidator = async (req, res, next) => {
   }
 };
 
-module.exports = { userCreate, userLogin, userProfile, joinEvent };
+const getUsers = async (req, res, next) => {
+  const { role, verified, status, name, purok } = req.query;
+
+  // Array to hold query conditions
+  const conditions = [];
+  const params = [];
+
+  // Add conditions based on query parameters
+  if (role) {
+    conditions.push("u.role = ?");
+    params.push(role);
+  }
+  if (verified) {
+    conditions.push("u.verified = ?");
+    params.push(verified);
+  }
+  if (status) {
+    conditions.push("u.status = ?");
+    params.push(status);
+  }
+  if (name) {
+    conditions.push(
+      "CONCAT(u.first_name, ' ', u.middle_name, ' ', u.last_name) LIKE ?"
+    );
+    params.push(`%${name}%`);
+  }
+
+  if (purok) {
+    conditions.push("u.purok = ?");
+    params.push(purok);
+  }
+
+  // Construct the WHERE clause dynamically
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  try {
+    const results = await query({
+      sql: `
+        SELECT u.*, p.name AS purok_name, g.title AS gender_name
+        FROM users u
+        LEFT JOIN purok p ON u.purok = p.id
+        LEFT JOIN gender g ON u.gender = g.id
+        ${whereClause}
+      `,
+      values: params,
+    });
+
+    return res.status(200).json(hidSensitivePropertiesFromArray(results));
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+const updateUser = async (req, res, next) => {
+  const {
+    first_name,
+    middle_name,
+    last_name,
+    birthday,
+    purok,
+    email,
+    current_password,
+  } = req.body;
+
+  try {
+    const results = await query({
+      sql: "UPDATE users SET first_name = ?, middle_name = ?, last_name = ?, birthday = ?, purok = ?, email = ? WHERE id = ?",
+      values: [
+        first_name,
+        middle_name,
+        last_name,
+        birthday,
+        purok,
+        email,
+        req.params.id,
+      ],
+    });
+    console.log("Hello World");
+
+    const updatedUser = await query({
+      sql: "SELECT * FROM users WHERE id = ?",
+      values: req.params.id,
+    });
+
+    return res.status(200).json({
+      message: "User updated successfully",
+      data: hidSensitiveData(updatedUser[0]),
+    });
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+
+  return res.status(422).json({
+    message: "Hello World",
+  });
+};
+
+const getUser = async (req, res, next) => {
+  const id = parseInt(req.params.id);
+
+  try {
+    const [results] = await query({
+      sql: "SELECT * FROM users WHERE id = ?",
+      values: id,
+    });
+
+    return res.status(200).json(hidSensitiveData(results));
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+module.exports = {
+  userCreate,
+  userLogin,
+  userProfile,
+  joinEvent,
+  getUsers,
+  getUser,
+  updateUser,
+};

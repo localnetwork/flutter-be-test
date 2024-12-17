@@ -14,6 +14,12 @@ const hidSensitiveData = (data) => {
   return newData;
 };
 
+const hidSensitivePropertiesFromArray = (data) => {
+  return data.map((item) => {
+    return hidSensitiveData(item);
+  });
+};
+
 const getUserByToken = (token) => {
   const decoded = jwt.verify(token, process.env.NODE_JWT_SECRET);
   return decoded;
@@ -60,4 +66,5 @@ module.exports = {
   validateRequiredField,
   currentTimestamp,
   generateCode,
+  hidSensitivePropertiesFromArray,
 };
