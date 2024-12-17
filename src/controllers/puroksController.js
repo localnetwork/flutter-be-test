@@ -1,4 +1,5 @@
 const { query } = require("../config/db");
+const helper = require("../lib/helper");
 const getPuroks = async (req, res, next) => {
   try {
     const results = await query({
@@ -78,4 +79,54 @@ const getPurokPopulation = async (req, res, next) => {
   }
 };
 
-module.exports = { getPuroks, getPurokPopulation };
+const getPurok = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const [purok] = await query({
+      sql: "SELECT * FROM purok WHERE id = ?",
+      values: [id],
+    });
+
+    if (!purok) {
+      return res.status(404).json({
+        message: "Purok not found.",
+      });
+    }
+    return res.status(200).json(purok);
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+const updatePurok = async (req, res, next) => {
+  const { id } = req.params;
+  const { name, male_population, female_population } = req.body;
+  try {
+    await query({
+      sql: "UPDATE purok SET name = ?, male_population = ?, female_population = ?, updated_at = ? WHERE id = ?",
+      values: [
+        name,
+        male_population,
+        female_population,
+        helper.currentTimestamp(),
+        id,
+      ],
+    });
+
+    console.log("female_population", female_population);
+
+    return res.status(200).json({
+      message: "Purok updated successfully.",
+    });
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+module.exports = { getPuroks, getPurok, getPurokPopulation, updatePurok };

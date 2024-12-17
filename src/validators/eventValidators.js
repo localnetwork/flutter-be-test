@@ -80,7 +80,38 @@ const eventAttendanceApprovalValidator = async (req, res, next) => {
   }
 };
 
+const joinEventValidator = async (req, res, next) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  try {
+    const results = await query({
+      sql: `
+        SELECT * 
+        FROM events_participation 
+        WHERE event_joined = ? 
+          AND user_id = ? 
+      `,
+      values: [id, user_id],
+    });
+
+    if (results.length > 0) {
+      return res.status(422).json({
+        message: "You have already joined this event.",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error validating join event:", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   eventCreateValidator,
+  joinEventValidator,
   eventAttendanceApprovalValidator,
 };

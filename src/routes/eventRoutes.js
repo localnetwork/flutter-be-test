@@ -17,6 +17,7 @@ const {
 const {
   eventCreateValidator,
   eventAttendanceApprovalValidator,
+  joinEventValidator,
 } = require("../validators/eventValidators");
 
 const router = express.Router();
@@ -43,6 +44,7 @@ router.post(
   isLoggedIn,
   isVerified,
   isApproved,
+  joinEventValidator,
   joinEvent
 );
 
