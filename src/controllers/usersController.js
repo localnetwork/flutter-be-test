@@ -363,6 +363,63 @@ const getUser = async (req, res, next) => {
   }
 };
 
+const userArchive = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const results = await query({
+      sql: "UPDATE users SET status = 0 WHERE id = ?",
+      values: id,
+    });
+
+    return res.status(200).json({
+      message: "User archived successfully",
+    });
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+const userUnarchive = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const results = await query({
+      sql: "UPDATE users SET status = 1 WHERE id = ?",
+      values: id,
+    });
+
+    return res.status(200).json({
+      message: "User unarchived successfully",
+    });
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
+const userDelete = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const results = await query({
+      sql: "DELETE FROM users WHERE id = ?",
+      values: id,
+    });
+
+    return res.status(200).json({
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    console.log("Error", error);
+    return res.status(500).json({
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   userCreate,
   userLogin,
@@ -371,4 +428,7 @@ module.exports = {
   getUsers,
   getUser,
   updateUser,
+  userArchive,
+  userUnarchive,
+  userDelete,
 };

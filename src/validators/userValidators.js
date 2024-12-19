@@ -170,8 +170,69 @@ const updateUserValidator = async (req, res, next) => {
   next();
 };
 
+const userArchiveValidator = async (req, res, next) => {
+  const { id } = req.params;
+  const [checkUser] = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: [id],
+  });
+
+  if (checkUser?.status === 0) {
+    return res.status(422).json({
+      message: "User is already archived",
+    });
+  }
+  next();
+};
+
+const userUnarchiveValidator = async (req, res, next) => {
+  const { id } = req.params;
+  const [checkUser] = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: [id],
+  });
+
+  if (!checkUser) {
+    return res.status(404).json({
+      message: "User not found.",
+    });
+  }
+
+  if (checkUser?.status === 1) {
+    return res.status(422).json({
+      message: "User is already active.",
+    });
+  }
+  next();
+};
+
+const userDeleteValidator = async (req, res, next) => {
+  const { id } = req.params;
+  const [checkUser] = await query({
+    sql: "SELECT * FROM users WHERE id = ?",
+    values: [id],
+  });
+
+  if (!checkUser) {
+    return res.status(404).json({
+      message: "User doesn't exist.",
+    });
+  }
+
+  if (checkUser?.role === 1) {
+    return res.status(422).json({
+      message: "Admin account cannot be deleted.",
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   userCreateValidation,
   userLoginValidation,
   updateUserValidator,
+  userArchiveValidator,
+  userUnarchiveValidator,
+  userDeleteValidator,
 };
